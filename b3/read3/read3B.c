@@ -18,7 +18,7 @@ int main(void)
     {
         if (read(fd, &character, 1) > 0)
         {
-            if (character = '\n')
+            if (character == '\n')
                 line_count++;
         }
         else

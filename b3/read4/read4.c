@@ -6,7 +6,7 @@
 #define TABLE_SIZE 128
 #define BUFFER_SIZE 1024
 
-int main(int argc, char *argv)
+int main(int argc, char *argv[])
 {
     static struct {
         long offset;
