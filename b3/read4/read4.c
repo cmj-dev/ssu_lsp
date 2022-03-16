@@ -24,6 +24,7 @@ int main(int argc, char *argv)
         fprintf(stderr, "usage: %s <file>\n", argv[0]);
         exit(1);
     }
+
     if ((fd = open(argv[1], O_RDONLY)) < 0)
     {
         fprintf(stderr, "open error for %s\n", argv[1]);
@@ -42,4 +43,25 @@ int main(int argc, char *argv)
                 table[++entry].offset = offset;
         }
     }
+
+    #ifdef DEBUG
+        for (i = 0; i < entry; i++)
+            printf("%d : %ld, %d\n", i + 1, table[i].offset, table[i].length);
+    #endif
+
+    while (1)
+    {
+        printf("Enter line number : ");
+        scanf("%d", &length);
+        if (--length < 0)
+            break;
+        lseek(fd, table[length].offset, 0);
+        if (read(fd, buf, table[length].length) <= 0)
+            continue;
+        buf[table[length].length] = '\0';
+        printf("%s", buf);
+    }
+    
+    close(fd);
+    exit(0);
 }
