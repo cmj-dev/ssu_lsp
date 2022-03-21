@@ -603,8 +603,8 @@ void ssu_diff(FILE *fp1, FILE *fp2)
 		f2_offset[line2 + 1] = 0;
 	else
 		f2_offset[line2 + 1] = -1;
-	int result1[BUFFER_SIZE];
-	int result2[BUFFER_SIZE];
+	int result1[BUFFER_SIZE + 1];
+	int result2[BUFFER_SIZE + 1];
 	i = 1;
 	int j = 1;
 	int start = 1;
