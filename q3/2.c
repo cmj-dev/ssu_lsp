@@ -28,7 +28,6 @@ int main(void)
             if (buf[count][i] == '\n' || buf[count][i] == 0)
             {
                 flag = 0;
-                buf[count][i] = 0;
                 offset = offset + i + 1;
                 lseek(fd, offset, SEEK_SET);
                 count++;

@@ -28,4 +28,6 @@ int main(int argc, char *argv[])
    }
    size = read(fd1, buf, BUFFER_SIZE);
    write(fd2, buf, size);
+   close(fd1);
+   close(fd2);
 }
