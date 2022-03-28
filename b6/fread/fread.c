@@ -20,5 +20,36 @@ int main(void)
         exit(1);
     }
 
-    
+    if (fwrite(&blackbeard, sizeof(struct ssu_pirate), 1, fp2) != 1)
+    {
+        fprintf(stderr, "fwrite error\n");
+        exit(1);
+    }
+
+    if (fclose(fp2))
+    {
+        fprintf(stderr, "fclose error\n");
+        exit(1);
+    }
+
+    if ((fp1 = fopen(fname, "r")) == NULL)
+    {
+        fprintf(stderr, "fopen error\n");
+        exit(1);
+    }
+
+    if (fread(&pirate, sizeof(struct ssu_pirate), 1, fp1) != 1)
+    {
+        fprintf(stderr, "fread error\n");
+        exit(1);
+    }
+
+    if (fclose(fp1))
+    {
+        fprintf(stderr, "fclose error\n");
+        exit(1);
+    }
+
+    printf("name=\"%s\" booty=%lu bread_length=%u\n", pirate.name, pirate.booty, pirate.bread_length);
+    exit(0);
 }
