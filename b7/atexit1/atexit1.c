@@ -14,5 +14,5 @@ int main(void)
 
 void ssu_out(void)
 {
-	printf("atexit succeeded\n");
+	printf("atexit succeeded!\n");
 }
