@@ -1,70 +1,19 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <dirent.h>
-#include <stdbool.h>
-#include <time.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <openssl/md5.h>
+#include "ssu_find.h"
 
-#define ARGMAX 5
-#define SUB_ARGMAX 3
-#define FILEMAX 255
-#define PATHMAX 4096
-#define BUFMAX 1024
-#define BUFSIZE 1024 * 16
-
-struct lower_list{
-    char path[PATHMAX];
-    struct lower_list *next;
-};
-
-struct file_list{
-    unsigned char md[MD5_DIGEST_LENGTH];
-    char path[PATHMAX];
-    long size;
-    struct file_list *next;
-    struct lower_list *l_start;
-};
-
-struct file_list *start;
-char extension[FILEMAX];
-long lminsize;
-long lmaxsize;
-char target_dir[PATHMAX];
-
-void command_sub(void);
-void do_fp(char *path, unsigned char *md);
-void search_src_file(char *dirname);
-void search_file(char *dirname, struct file_list *node);
 void pt(unsigned char *md);
-void add_node(struct file_list *new);
-void create_new_node(struct file_list *new, unsigned char *md, char *path, long size);
-void add_low_node(struct lower_list *l_start, char *path);
-bool hashcmp(unsigned char *dest, unsigned char *src);
-void filter_list(void);
-bool have_path(char *path);
-void print_result(void);
-void rearr_list(void);
-void print_time(time_t tv_sec);
-int split(char* string, char* seperator, char* argv[]);
+void do_fp(char *path, unsigned char *md);
 
-void command_fmd5(int argc, char **argv)
+int main(int argc, char **argv)
 {
     double minsize;
     double maxsize;
     char rpath[PATHMAX];
     char path[PATHMAX];
-    
+    int list_leng;
     if (argc != ARGMAX)
     {
         printf("ERROR: Arguments error\n");
-        return;
+        exit(0);
     }
     if (!strcmp(argv[1], "*"))
         strcpy(extension, "");
@@ -73,7 +22,7 @@ void command_fmd5(int argc, char **argv)
     else
     {
         printf("please enter the correct extension\n");
-        return;
+        exit(0);
     }
 
     if (strcmp(argv[2],"~"))
@@ -111,7 +60,7 @@ void command_fmd5(int argc, char **argv)
     if (realpath(path, rpath) == NULL)
     {
         fprintf(stderr, "targetpass error \n");
-        return;
+        exit(0);
     }
     lminsize = (long)minsize;
     lmaxsize = (long)maxsize;
@@ -131,13 +80,15 @@ void command_fmd5(int argc, char **argv)
         exit(1);
     }
     rearr_list();
-    print_result();
+    list_leng = print_result();
+    if (list_leng == 0)
+        printf("No duplicates in %s\n",target_dir);
     if (endtime.tv_usec < starttime.tv_usec) // when millisecond is negative
         printf("Searching time: %ld:%ld(sec:usec)\n\n", endtime.tv_sec - starttime.tv_sec - 1, 1000000 + endtime.tv_usec - starttime.tv_usec);
     else
         printf("Searching time: %ld:%ld(sec:usec)\n\n", endtime.tv_sec - starttime.tv_sec, endtime.tv_usec - starttime.tv_usec);
     if (start->next != NULL)
-        command_sub();
+        command_sub(list_leng);
     struct file_list *arrow;
     struct file_list *free_f;
     struct lower_list *arrow2;
@@ -162,50 +113,6 @@ void command_fmd5(int argc, char **argv)
     }
     free(start);
     exit(0);
-}
-
-void command_sub(void)
-{
-    int sub_argc = 0;
-    char input[BUFMAX];
-    char *sub_argv[SUB_ARGMAX];
-    while (1)
-    {
-        printf(">> ");
-        fgets(input, sizeof(input), stdin);
-        input[strlen(input) - 1] = '\0';
-        sub_argc = split(input, " ", sub_argv);
-        if (sub_argc == 0)
-            continue;
-        if (!strcmp(sub_argv[0], "exit"))
-        {
-            printf(">> Back to Prompt\n");
-            break;
-        }
-        // else if (!strcmp(sub_argv[1], "d"))
-        //     command_fmd5(sub_argc, sub_argv);
-        // else if (!strcmp(sub_argv[1], "i"))
-        //     command_fmd5(sub_argc, sub_argv);
-        // else if (!strcmp(sub_argv[1], "f"))
-        //     command_fmd5(sub_argc, sub_argv);
-        // else if (!strcmp(sub_argv[1], "j"))
-        //     command_fmd5(sub_argc, sub_argv);
-        else
-            printf("ERROR: Arguments error\n");
-    }
-}
-
-int filt_dir(const struct dirent *dest)
-{
-	return((dest->d_type == DT_DIR)&&(strcmp(dest->d_name,"."))&&(strcmp(dest->d_name,"..")));
-}
-
-int filt_reg(const struct dirent *dest)
-{
-    if (!strlen(extension))
-	    return((dest->d_type == DT_REG));
-    else
-        return((dest->d_type == DT_REG)&&(strstr(dest->d_name,extension) != NULL));
 }
 
 void search_src_file(char *dirname)
@@ -342,93 +249,6 @@ void search_file(char *dirname, struct file_list *node)
 	free(dir_res);
 }
 
-void add_node(struct file_list *new)
-{
-    struct file_list *temp;
-    struct file_list *target;
-    target = start;
-    while (1)
-    {
-        if (target->next == NULL || target->next->size > new->size)
-        {
-            temp = target->next;
-            target->next = new;
-            new->next = temp;
-            break;
-        }
-        target = target->next;
-    }
-}
-
-void create_new_node(struct file_list *new, unsigned char *md, char *path, long size)
-{
-    strcpy(new->md, md);
-    strcpy(new->path, path);
-    new->size = size;
-    new->l_start = NULL;
-}
-
-void add_low_node(struct lower_list *l_start, char *path)
-{
-    
-    struct lower_list *new;
-    struct lower_list *temp;
-    struct lower_list *target;
-
-    target = l_start;
-    new = (struct lower_list *)malloc(sizeof(struct lower_list));
-    while (target->next != NULL)
-        target = target->next;
-    temp = target->next;
-    target->next = new;
-    strcpy(new->path, path);
-    new->next = temp;
-}
-
-void rearr_list(void)
-{
-    struct file_list *arrow;
-    struct lower_list *temp;
-    struct lower_list *fst_node;
-    arrow = start->next;
-    while (arrow != NULL)
-    {
-        temp = arrow->l_start->next;
-        fst_node = (struct lower_list *)malloc(sizeof(struct lower_list));
-        arrow->l_start->next = fst_node;
-        fst_node->next = temp;
-        strcpy(fst_node->path, arrow->path);
-        arrow = arrow->next;
-    }
-}
-
-bool have_path(char *path)
-{
-    struct file_list *arrow1;
-    struct lower_list *arrow2;
-    if (start->next == NULL)
-        return false;
-    arrow1 = start->next;
-    while (1)
-    {
-        if (!strcmp(path, arrow1->path))
-            return true;
-        arrow2 = arrow1->l_start->next;
-        while (1)
-        {
-            if (!strcmp(path, arrow2->path))
-                return true;
-            if (arrow2->next == NULL)
-                break;
-            arrow2 = arrow2->next;
-        }
-        if (arrow1->next == NULL)
-            break;
-        arrow1 = arrow1->next;
-    }
-    return false;
-}
-
 void pt(unsigned char *md)
 {
     int i;
@@ -463,32 +283,25 @@ void do_fp(char *path, unsigned char *md)
     fclose(f);
 }
 
-bool hashcmp(unsigned char *dest, unsigned char *src)
+int print_result(void)
 {
-    for (int i = 0; i < MD5_DIGEST_LENGTH; i++)
-    {
-        if (dest[i] != src[i])
-            return false;
-    }
-    return true;
-}
-
-void print_result(void)
-{
+    delete_list();
     struct stat temp_stat;
     struct file_list *arrow;
     struct lower_list *arrow2;
     arrow = start->next;
-    int i = 1;
+    int i = 0;
     int j = 1;
     while (arrow != NULL)
     {
         if (arrow->l_start != NULL)
         {
-            printf("---- Identical files #%d (%ld bytes - ", i, arrow->size);
+            i++;
+            printf("---- Identical files #%d (", i);
+            print_num(arrow->size);
+            printf(" bytes - ");
             pt(arrow->md);//사이즈 0 3개마다 쉼표 나오게 할것!!!
             printf(") ----\n");
-            i++;
             arrow2 = arrow->l_start->next;
             j = 1;
             while (arrow2 != NULL)
@@ -498,11 +311,11 @@ void print_result(void)
                     fprintf(stderr, "lstat error for %s\n", arrow2->path);
                     exit(1);
                 }
-                printf("[%d] %s (mtime", j, arrow2->path);
+                printf("[%d] %s (mtime : ", j, arrow2->path);
                 print_time(temp_stat.st_mtim.tv_sec);
-                printf(" (atime");
+                printf(") (atime : ");
                 print_time(temp_stat.st_atim.tv_sec);
-                printf("\n");
+                printf(")\n");
                 arrow2 = arrow2->next;
                 j++;
             }
@@ -510,12 +323,5 @@ void print_result(void)
         }
         arrow = arrow->next;
     }
-    if (start->next == NULL)
-        printf("No duplicates in %s\n", target_dir);
-}
-
-void print_time(time_t tv_sec)
-{
-    printf(" : %2d-%02d-%02d %02d:%02d:%02d)",localtime(&tv_sec)->tm_year - 100, localtime(&tv_sec)->tm_mon + 1, localtime(&tv_sec)->tm_mday,
-			   localtime(&tv_sec)->tm_hour, localtime(&tv_sec)->tm_min, localtime(&tv_sec)->tm_sec);
+    return i;
 }
