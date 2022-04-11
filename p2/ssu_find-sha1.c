@@ -155,6 +155,8 @@ void search_src_file(char *dirname)
             continue;
         if (lmaxsize != -1 && lmaxsize < temp_stat.st_size)
             continue;
+        if (temp_stat.st_size < 1)
+            continue;
         if (have_path(path))
             continue;
         //minsize나 maxsize가 명시되어 있는 경우에는 그 사이즈 안에 있는 파일들에 대해서만 탐색한다.
@@ -225,8 +227,10 @@ void search_file(char *dirname, struct file_list *node)
             continue;
         if (!strcmp(node->path, path))
             continue;
+        if (node->size != temp_stat.st_size)
+            continue;
         do_fp(path, md);//md라는 unsigned char형 배열에 path파일에 해당하는 hash값을 넣어놓는다.
-        if (node->size == temp_stat.st_size && hashcmp(node->md, md))
+        if (hashcmp(node->md, md))
         {
             if (node->l_start == NULL)
             {
