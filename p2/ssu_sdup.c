@@ -17,7 +17,7 @@ int main(void)
 {
 	int argc = 0;
 	char input[BUFMAX];
-	char* argv[ARGMAX];
+	char* argv[ARGMAX + 1];
 
 	// 프롬프트 시작
 	while (1) {
@@ -34,7 +34,7 @@ int main(void)
         {
             if ((pid = fork()) == 0)
             {
-                execl("fmd5", "fmd5", argv[1], argv[2], argv[3], argv[4], NULL);
+                execv("fmd5", argv);
             }
             wait(NULL);
         }
@@ -42,7 +42,7 @@ int main(void)
         {
             if ((pid = fork()) == 0)
             {
-                execl("fsha1", "fsha1", argv[1], argv[2], argv[3], argv[4], NULL);
+                execv("fsha1", argv);
             }
             wait(NULL);
         }
@@ -81,6 +81,7 @@ int split(char* string, char* seperator, char* argv[])
 		argv[argc++] = ptr;
 		ptr = strtok(NULL, seperator);
 	}
+    argv[argc] = ptr;
 
 	return argc;
 }
