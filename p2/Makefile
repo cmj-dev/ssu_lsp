@@ -12,5 +12,5 @@ fsha1 : ssu_find-sha1.c ssu_find.c ssu_find.h
 help : ssu_help.c
 	$(CC) -o help ssu_help.c
 
-remove : 
+clear : 
 	rm ssu_sdup fmd5 fsha1 help

@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     if (argc != ARGMAX)
     {
         printf("ERROR: Arguments error\n");
-        exit(0);
+        exit(1);
     }
     if (!strcmp(argv[1], "*"))
         strcpy(extension, "");
@@ -22,12 +22,17 @@ int main(int argc, char **argv)
     else
     {
         printf("please enter the correct extension\n");
-        exit(0);
-    }
+        exit(1);
+    }//확장자 처리
 
     if (strcmp(argv[2],"~"))
     {
         minsize = atof(argv[2]);
+        if (minsize < 1)
+        {
+            printf("please enter the correct size\n");
+            exit(1);
+        }
         if (strstr(argv[2],"MB") != NULL || strstr(argv[2],"mb") != NULL)
             minsize *= 1000000;
         else if (strstr(argv[2],"GB") != NULL || strstr(argv[2],"gb") != NULL)
@@ -40,6 +45,11 @@ int main(int argc, char **argv)
     if (strcmp(argv[3],"~"))
     {
         maxsize = atof(argv[3]);
+        if (maxsize < 1)
+        {
+            printf("please enter the correct size\n");
+            exit(1);
+        }
         if (strstr(argv[3],"MB") != NULL || strstr(argv[3],"mb") != NULL)
             maxsize *= 1000000;
         else if (strstr(argv[3],"GB") != NULL || strstr(argv[3],"gb") != NULL)
@@ -49,6 +59,7 @@ int main(int argc, char **argv)
     }
     else
         maxsize = -1;
+    //min, max사이즈 단위 byte로 변경, 입력값이 ~면 고려하지 않고 탐색 진행
     if (!strncmp(argv[4], "~", 1))
     {
         strcpy(path, getenv("HOME"));
@@ -56,12 +67,12 @@ int main(int argc, char **argv)
     }
     else
         strcpy(path, argv[4]);
-    
+    // ~인 경우에는 사용자의 홈디렉토리 환경변수 받아와서 진행
     if (realpath(path, rpath) == NULL)
     {
         fprintf(stderr, "targetpass error \n");
-        exit(0);
-    }
+        exit(1);
+    }//targetpass 가 없을 경우 error 출력
     lminsize = (long)minsize;
     lmaxsize = (long)maxsize;
     start = (struct file_list*)malloc(sizeof(struct file_list));
@@ -73,22 +84,22 @@ int main(int argc, char **argv)
 		fprintf(stderr, "gettimeofday error\n");
 		exit(1);
 	}
-    search_src_file(rpath);
+    search_src_file(rpath);//탐색 진행
     if (gettimeofday(&endtime, NULL) < 0) // get endtime
     {
         fprintf(stderr, "gettimeofday error\n");
         exit(1);
     }
-    rearr_list();
-    list_leng = print_result();
+    rearr_list();//프린트하기 알맞게 링크드리스트 재배치
+    list_leng = print_result();//중복파일 리스트의 개수 리턴
     if (list_leng == 0)
         printf("No duplicates in %s\n",target_dir);
-    if (endtime.tv_usec < starttime.tv_usec) // when millisecond is negative
+    if (endtime.tv_usec < starttime.tv_usec) 
         printf("Searching time: %ld:%ld(sec:usec)\n\n", endtime.tv_sec - starttime.tv_sec - 1, 1000000 + endtime.tv_usec - starttime.tv_usec);
     else
         printf("Searching time: %ld:%ld(sec:usec)\n\n", endtime.tv_sec - starttime.tv_sec, endtime.tv_usec - starttime.tv_usec);
     if (start->next != NULL)
-        command_sub(list_leng);
+        command_sub(list_leng);// >>명령어 진행
     struct file_list *arrow;
     struct file_list *free_f;
     struct lower_list *arrow2;
@@ -112,7 +123,7 @@ int main(int argc, char **argv)
         free(free_f);
     }
     free(start);
-    exit(0);
+    exit(0); //free 진행 후 종료
 }
 
 void search_src_file(char *dirname)
@@ -136,7 +147,7 @@ void search_src_file(char *dirname)
 		fprintf(stderr, "scandir error for %s\n", dirname);
 		exit(1);
     }
-    //dirname안에 있는 일반 파일 릭스트 <- f_res
+    //dirname안에 있는 일반 파일 리스트 <- f_res
     //dirname안에 있는 디렉토리 리스트 <- dir_res
     //먼저 해당 파일들 찾기.
 	for (int i = 0; i < f_num; i++)
@@ -160,15 +171,16 @@ void search_src_file(char *dirname)
         if (have_path(path))
             continue;
         //minsize나 maxsize가 명시되어 있는 경우에는 그 사이즈 안에 있는 파일들에 대해서만 탐색한다.
+        //사이즈가 0이거나 path가 이미 저장된 링크드 리스트 안에 있는 파일이면 진행하지 않는다.
         do_fp(path, md);//md라는 unsigned char형 배열에 path파일에 해당하는 hash값을 넣어놓는다.
         strcpy(temp_path, target_dir);
         struct file_list *new_node = (struct file_list *)malloc(sizeof(struct file_list));
-        create_new_node(new_node, md, path, temp_stat.st_size);
+        create_new_node(new_node, md, path, temp_stat.st_size);//new_node에 비교 기준 파일의 정보를 넣어놓는다.
         search_file(temp_path, new_node);//같은 파일을 targetdir부터 찾는다.
         if (new_node->l_start == NULL)
             free(new_node);//같은 파일이 없으면 free시켜준다.
         else
-            add_node(new_node);//같은 파일이 있으면 node를
+            add_node(new_node);//같은 파일이 있으면 node를 리스트에 추가한다.
     }
     for (int i = 0; i < dir_num; i++)
 	{
@@ -177,7 +189,7 @@ void search_src_file(char *dirname)
 		else
 			sprintf(path, "%s/%s", dirname, dir_res[i]->d_name);
         if (strcmp(path,"/run")&&strcmp(path,"/proc")&&strcmp(path,"/mnt/c")&&strcmp(path,"/sys"))
-            search_src_file(path);
+            search_src_file(path);//BFS로 진행한다.
 	}
 	free(f_res);
 	free(dir_res);
@@ -203,7 +215,7 @@ void search_file(char *dirname, struct file_list *node)
 		fprintf(stderr, "scandir error for %s\n", dirname);
 		exit(1);
     }
-    //dirname안에 있는 일반 파일 릭스트 <- f_res
+    //dirname안에 있는 일반 파일 리스트 <- f_res
     //dirname안에 있는 디렉토리 리스트 <- dir_res
     //먼저 해당 파일들 찾기.
 	for (int i = 0; i < f_num; i++)
@@ -225,15 +237,15 @@ void search_file(char *dirname, struct file_list *node)
         //minsize나 maxsize가 명시되어 있는 경우에는 그 사이즈 안에 있는 파일들에 대해서만 탐색한다.
         if (have_path(path))
             continue;
-        if (!strcmp(node->path, path))
+        if (!strcmp(node->path, path))//기준파일과 같은 파일이면 무시
             continue;
-        if (node->size != temp_stat.st_size)
+        if (node->size != temp_stat.st_size)//사이즈가 다르면 무시
             continue;
         do_fp(path, md);//md라는 unsigned char형 배열에 path파일에 해당하는 hash값을 넣어놓는다.
-        if (hashcmp(node->md, md))
+        if (hashcmp(node->md, md))//기준 파일과 hash값을 비교해서 같으면 넣기를 진행.
         {
             if (node->l_start == NULL)
-            {
+            {//노드의 첫번째가 없으면 malloc으로 할당 후 추가
                 node->l_start = (struct lower_list *)malloc(sizeof(struct lower_list));
                 node->l_start->next = NULL;
             }
@@ -247,7 +259,7 @@ void search_file(char *dirname, struct file_list *node)
 		else
 			sprintf(path, "%s/%s", dirname, dir_res[i]->d_name);
         if (strcmp(path,"/run")&&strcmp(path,"/proc")&&strcmp(path,"/mnt/c")&&strcmp(path,"/sys"))
-            search_file(path, node);
+            search_file(path, node);//BFS로 비교 진행
 	}
 	free(f_res);
 	free(dir_res);
@@ -258,11 +270,11 @@ void pt(unsigned char *md)
     int i;
 
     for (i = 0; i < SHA_DIGEST_LENGTH; i++)
-        printf("%02x", md[i]);
+        printf("%02x", md[i]);//SHA1 한칸씩 프린트
 }
 
 void do_fp(char *path, unsigned char *md)
-{
+{//해시값 md에 저장
     SHA_CTX c;
     int fd;
     int i;
@@ -288,7 +300,7 @@ void do_fp(char *path, unsigned char *md)
 }
 
 int print_result(void)
-{
+{//링크드 리스트에 저장된 대로 출력
     delete_list();
     struct stat temp_stat;
     struct file_list *arrow;
@@ -304,7 +316,7 @@ int print_result(void)
             printf("---- Identical files #%d (", i);
             print_num(arrow->size);
             printf(" bytes - ");
-            pt(arrow->md);//사이즈 0 3개마다 쉼표 나오게 할것!!!
+            pt(arrow->md);
             printf(") ----\n");
             arrow2 = arrow->l_start->next;
             j = 1;
@@ -327,5 +339,5 @@ int print_result(void)
         }
         arrow = arrow->next;
     }
-    return i;
+    return i;//총 프린트한 중복리스트 개수 반환
 }
