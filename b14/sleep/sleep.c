@@ -9,10 +9,10 @@ int main(void)
 {
 	unsigned int ret;
 
-	ssu_timestamp("before sleep()");
+	ssu_timestamp("before sleep()");//sleep하기 전 시간을 출력한다.
 	ret = sleep(10);
-	ssu_timestamp("after sleep()");
-	printf("sleep() returned %d\n", ret);
+	ssu_timestamp("after sleep()");//10초동안 sleep을 한 후에 다시 시간을 출력한다.
+	printf("sleep() returned %d\n", ret);//sleep을 하고 남은 시간을 출력한다.
 	exit(0);
 }
 

@@ -21,15 +21,15 @@ int main(void)
 	if (ret == 0)
 	{
 		act_sig1.sa_handler = ssu_signal_handler1;
-		sigaction(SIGINT, &act_sig1, NULL);
+		sigaction(SIGINT, &act_sig1, NULL);//SIGINT의 handler를 설정해준다.
 	}
-	else if (ret == 3)
+	else if (ret == 3)//SIGINT의 handelr함수에 의해 ret이 3되면서 setjmp로 점프한다.
 		printf("---------------\n");
 
 	printf("Starting\n");
-	sigsetjmp(jmp_buf2, 2);
+	sigsetjmp(jmp_buf2, 2);//SIGUSR1의 handelr함수에 의해 setjmp로 점프한다.
 	act_sig2.sa_handler = ssu_signal_handler2;
-	sigaction(SIGUSR1, &act_sig2, NULL);
+	sigaction(SIGUSR1, &act_sig2, NULL);//SIGUSR1의 handler를 설정해준다.
 
 	for (i = 0; i < 20; i++)
 	{

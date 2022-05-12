@@ -10,7 +10,7 @@ int main(void)
 
 	sigemptyset(&sig_set);
 	sigaddset(&sig_set, SIGINT);
-	sigprocmask(SIG_BLOCK, &sig_set, &old_set);
-	sigsuspend(&old_set);
+	sigprocmask(SIG_BLOCK, &sig_set, &old_set);//SIGINT를 BLOCK설정한다
+	sigsuspend(&old_set);//old_set집합으로 SIG_BLOCK을 하기 때문에 SIGINT가 UNBLOCK되고 SIGINT의 핸들러가 실행 가능해진다.
 	exit(0);
 }
