@@ -21,8 +21,8 @@ int main(void)
 
     while(1)
     {
-        openlog("lpd", LOG_PID, LOG_LPR);//syslog를 위해 log환경을 
-        syslog(LOG_ERR, "open failed lpd %m");
+        openlog("lpd", LOG_PID, LOG_LPR);//syslog를 위해 log환경을 초기화 해준다. 이때 log는 lpd로 시작하고 pid를 찍으며 라인 프린터 시스템을 사용한다.
+        syslog(LOG_ERR, "open failed lpd %m");//오류메세지 문자열을 출력해준다.
         closelog();
         sleep(5);
     }
